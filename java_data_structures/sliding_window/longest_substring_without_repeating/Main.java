@@ -3,32 +3,15 @@ import java.util.HashSet;
 class Main {
 
 	public static void main(String[] args) {
-		var s = "abcabcabcd";
+		var s = "abcabcabcdabcdefghijka";
 
-		var longestSubstringCount = longestSubstringWithoutRepeating(s);
+		var longestSubstringCountHashSet = HashSetSolution.longestSubstringWithoutRepeating(s);
+		var longestSubstringCountHashMap = HashMapSolution.solve(s);
 
-		System.out.println(longestSubstringCount);
+		System.out.println(longestSubstringCountHashSet);
+		System.out.println(longestSubstringCountHashMap);
 	}
 
-	static int longestSubstringWithoutRepeating(String s) {
-		var seen = new HashSet<Character>();
-		var left = 0;
-		var right = 0;
-		var longest = 0;
-
-		while (right < s.length()) {
-			var character = s.charAt(right);
-
-			if (seen.add(character)) {
-				longest = Math.max(longest, right - left + 1);
-				right++;
-			} else {
-				seen.remove(s.charAt(left));
-				left++;
-			}
-		}
-
-		return longest;
-	}
+	
 
 }
