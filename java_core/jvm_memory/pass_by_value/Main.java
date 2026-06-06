@@ -2,6 +2,7 @@
 
 class Main {
 
+
 	public static void main(String[] args) {
 		// Pass by value
 		int num = 1;
@@ -9,7 +10,7 @@ class Main {
 		changePrimitive(num);
 		System.out.println(num);
 
-		// Pass by reference
+		// Still pass by value but the value is the reference to object 
 		var person = new Person("Marianek");
 		System.out.println(person.name);
 		mutatePerson(person);
@@ -23,10 +24,19 @@ class Main {
 		num++;
 	}
 
+	/* 
+		main person ----┐
+		method person --┘ ---> Changed
+	*/
 	static void mutatePerson(Person person) {
 		person.name = "Changed";
 	}
 
+	/* 
+		main person ----------> Changed
+
+		method person --------> Czesław
+	*/
 	static void reassignPerson(Person person) {
 		person = new Person("Czesław");
 	}
