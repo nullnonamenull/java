@@ -1,47 +1,48 @@
 package com.noname.todo.controller;
 
 import com.noname.todo.entity.Todo;
+import com.noname.todo.service.TodoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/todos")
 public class TodoController {
 
-    private final List<Todo> todos = new ArrayList<>();
+    private final TodoService todoService;
+
+    public TodoController(TodoService todoService) {
+        this.todoService = todoService;
+    }
 
     @GetMapping
     public ResponseEntity<List<Todo>> getAll() {
-        return ResponseEntity.ok(todos);
+        final var todos = todoService.getAll();
+        return todos.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.ok(todos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Todo> getById(@PathVariable("id") int id) {
-        Optional<Todo> optTodo = todos.stream()
-                .filter(todo -> todo.getId() == id)
-                .findFirst();
+    public ResponseEntity<Todo> getById(@PathVariable int id) {
+        Optional<Todo> optTodo = todoService.getById(id);
 
-        return optTodo
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return optTodo.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<Void> addTodo(@RequestBody Todo todo) {
-        todos.add(todo);
+        todoService.add(todo);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable("id") int id) {
-        var isDeleted = todos.removeIf(todo -> Objects.equals(todo.getId(), id));
-
+    public ResponseEntity<Void> deleteById(@PathVariable int id) {
+        var isDeleted = todoService.deleteById(id);
         return isDeleted
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.noContent().build();
