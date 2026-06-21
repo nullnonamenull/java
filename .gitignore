@@ -1,3 +1,6 @@
 # Java compiled files
 *.class
 target/
+/.idea/
+/spring_boot/doc-forge/.idea/
+/spring_boot/rest_basic_todo_in_memory/.idea/
