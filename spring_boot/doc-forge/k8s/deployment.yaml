@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docforge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docforge
+  template:
+    metadata:
+      labels:
+        app: docforge
+    spec:
+      containers:
+        - name: docforge
+          image: docforge:1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
