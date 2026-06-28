@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: greeter-client-groc
+  grpc:
+    client:
+      channels:
+        greeter:
+          address: localhost:9091
