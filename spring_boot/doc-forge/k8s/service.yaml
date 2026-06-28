@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: docforge
 spec:
-  type: NodePort
+  type: NodePort # DEFAULT VALUE: ClusterIP
   selector:
     app: docforge
   ports:
