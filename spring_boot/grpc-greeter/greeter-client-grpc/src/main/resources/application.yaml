@@ -3,6 +3,6 @@ spring:
     name: greeter-client-groc
   grpc:
     client:
-      channels:
+      channel:
         greeter:
-          address: localhost:9091
+          target: static://localhost:9091

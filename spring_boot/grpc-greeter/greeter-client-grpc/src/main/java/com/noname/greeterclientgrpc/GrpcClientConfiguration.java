@@ -10,7 +10,7 @@ public class GrpcClientConfiguration {
 
     @Bean
     GreeterGrpc.GreeterBlockingStub greeterStub(GrpcChannelFactory channels) {
-        return GreeterGrpc.newBlockingStub(channels.createChannel("localhost:9091"));
+        return GreeterGrpc.newBlockingStub(channels.createChannel("greeter"));
     }
 
 }
