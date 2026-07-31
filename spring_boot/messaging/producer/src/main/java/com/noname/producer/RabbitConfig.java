@@ -21,7 +21,13 @@ public class RabbitConfig {
 
     @Bean
     public Queue testOneQueue() {
-        return QueueBuilder.durable("test.one.q").build();
+        return QueueBuilder.durable("test.one.q")
+                .quorum()
+                // group size capped by cluster size — single node gives 1 replica
+//                .withArgument("x-quorum-initial-group-size", 5) // 5 replicas: 1 leader + 4 followers
+                .ttl(100) // x-message-ttl - in ms -> then dead letter
+                .expires(200_00)
+                .build();
     }
 
     @Bean

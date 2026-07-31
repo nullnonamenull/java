@@ -21,7 +21,7 @@ public class EventPublisher {
 
     @Scheduled(cron = "0 * * * * *")
     public void publishTestOne() {
-        send(new PoJo("Test", 123));
+        send(new SomeDto("Test", 123));
     }
 
     private void send(Object payload) {
@@ -35,6 +35,6 @@ public class EventPublisher {
         }, new CorrelationData(messageId));
     }
 
-    public record PoJo(String a, int b) {
+    public record SomeDto(String a, int b) {
     }
 }

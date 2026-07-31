@@ -3,19 +3,17 @@ package com.noname.consumerone;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Component
 public class TestOneConsumer {
 
-    private final List<PoJo> pojoList = new ArrayList<>();
+    private final TestInMemoryService testInMemoryService;
 
-    @RabbitListener(queues = ConsumerTopology.QUEUE)
-    public void on(PoJo event) {
-        pojoList.add(event);
+    public TestOneConsumer(TestInMemoryService testInMemoryService) {
+        this.testInMemoryService = testInMemoryService;
     }
 
-    public record PoJo(String a, int b) {
+    @RabbitListener(queues = RabbitConfig.QUEUE)
+    public void on(SomeDto event) {
+        testInMemoryService.create(event);
     }
 }
