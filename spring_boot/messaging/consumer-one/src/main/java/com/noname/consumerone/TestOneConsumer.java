@@ -13,7 +13,11 @@ public class TestOneConsumer {
     }
 
     @RabbitListener(queues = RabbitConfig.QUEUE)
-    public void on(SomeDto event) {
+    public void on(SomeDto event) throws Exception {
+//        if (true ){
+//            throw new Exception();
+//        }
+
         testInMemoryService.create(event);
     }
 }

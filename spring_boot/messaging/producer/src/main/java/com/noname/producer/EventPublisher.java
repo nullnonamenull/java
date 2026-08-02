@@ -19,7 +19,7 @@ public class EventPublisher {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "* * * * * *")
     public void publishTestOne() {
         send(new SomeDto("Test", 123));
     }
