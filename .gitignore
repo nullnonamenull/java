@@ -4,6 +4,7 @@ target/
 /.idea/
 /spring_boot/doc-forge/.idea/
 /spring_boot/rest_basic_todo_in_memory/.idea/
+/spring_boot/rest-basic-todo-in-memory/.idea/
 
 # Local working notes - never commit
 NOTES-*.md
