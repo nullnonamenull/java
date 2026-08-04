@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.OffsetDateTime;
+
 @Component
 public class EventPublisher {
 
@@ -36,7 +38,9 @@ public class EventPublisher {
                     .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
                     .build();
             rabbitTemplate.send(EXCHANGE, row.getEventType(), new Message(body, props));
-            outboxRepository.delete(row);
+
+            row.setAttempts(row.getAttempts() + 1);
+            row.setNextAttemptAt(OffsetDateTime.now().plusSeconds(30));
         }
     }
 }
