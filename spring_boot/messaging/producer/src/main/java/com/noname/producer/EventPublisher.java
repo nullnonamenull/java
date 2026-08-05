@@ -3,6 +3,7 @@ package com.noname.producer;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePropertiesBuilder;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class EventPublisher {
@@ -28,8 +31,10 @@ public class EventPublisher {
 
     @Scheduled(fixedDelay = 1000)
     @Transactional
-    public void relay() {
+    public void relay() throws Exception {
         var batch = outboxRepository.lockBatch(100);
+        var kwitki = new ArrayList<CorrelationData>();
+
         for (var row : batch) {
             byte[] body = objectMapper.writeValueAsBytes(row.getPayload());
             var props = MessagePropertiesBuilder.newInstance()
@@ -37,10 +42,23 @@ public class EventPublisher {
                     .setContentType("application/json")
                     .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
                     .build();
-            rabbitTemplate.send(EXCHANGE, row.getEventType(), new Message(body, props));
+
+            var kwitek = new CorrelationData(row.getId().toString());
+
+            rabbitTemplate.send(EXCHANGE, row.getEventType(), new Message(body, props), kwitek);
+            kwitki.add(kwitek);
 
             row.setAttempts(row.getAttempts() + 1);
             row.setNextAttemptAt(OffsetDateTime.now().plusSeconds(30));
+        }
+
+        for (var kwitek : kwitki) {
+            try {
+                var result = kwitek.getFuture().get(5, TimeUnit.SECONDS);
+                System.out.println(kwitek.getId() + " ack=" + result.ack());
+            } catch (Exception e) {
+                throw new Exception(e);
+            }
         }
     }
 }
