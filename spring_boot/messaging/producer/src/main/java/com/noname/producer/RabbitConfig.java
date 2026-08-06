@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 
+import static com.noname.producer.OutboxPublisher.EXCHANGE;
+
 @Configuration
 public class RabbitConfig {
 
@@ -22,7 +24,7 @@ public class RabbitConfig {
     // MAIN
     @Bean
     public TopicExchange appEventExchange() {
-        return new TopicExchange(EventPublisher.EXCHANGE, true, false);
+        return new TopicExchange(EXCHANGE, true, false);
     }
 
     @Bean

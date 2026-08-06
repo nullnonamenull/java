@@ -1,42 +1,38 @@
 package com.noname.producer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePropertiesBuilder;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 @Component
-public class EventPublisher {
+public class OutboxPublisher {
 
     public static final String EXCHANGE = "app.events.v1";
 
-    private static final Logger logger = LoggerFactory.getLogger(EventPublisher.class);
-
-    private final RabbitTemplate rabbitTemplate;
-    private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
+    private final OutboxRepository outboxRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public EventPublisher(RabbitTemplate rabbitTemplate, OutboxRepository outboxRepository, ObjectMapper objectMapper) {
-        this.rabbitTemplate = rabbitTemplate;
-        this.outboxRepository = outboxRepository;
+
+    public OutboxPublisher(ObjectMapper objectMapper, OutboxRepository outboxRepository, RabbitTemplate rabbitTemplate) {
         this.objectMapper = objectMapper;
+        this.outboxRepository = outboxRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
-    @Scheduled(fixedDelay = 1000)
+
     @Transactional
-    public void relay() {
-        var batch = outboxRepository.lockBatch(100);
+    public List<CorrelationData> publishBatch(int limit) {
+        var batch = outboxRepository.lockBatch(limit);
         var kwitki = new ArrayList<CorrelationData>();
 
         for (var row : batch) {
@@ -56,13 +52,7 @@ public class EventPublisher {
             row.setNextAttemptAt(OffsetDateTime.now().plusSeconds(30));
         }
 
-        for (var kwitek : kwitki) {
-            try {
-                var result = kwitek.getFuture().get(5, TimeUnit.SECONDS);
-                System.out.println(kwitek.getId() + " ack=" + result.ack());
-            } catch (Exception e) {
-                logger.error("Confirm failed for outbox {}", kwitek.getId(), e);
-            }
-        }
+        return kwitki;
     }
+
 }
