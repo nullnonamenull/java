@@ -12,6 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class OutboxPublisher {
@@ -55,4 +56,8 @@ public class OutboxPublisher {
         return kwitki;
     }
 
+    @Transactional
+    public void settle(List<UUID> ok) {
+        outboxRepository.deleteAllByIdInBatch(ok);
+    }
 }
