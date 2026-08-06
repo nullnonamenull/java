@@ -1,5 +1,7 @@
 package com.noname.producer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessagePropertiesBuilder;
@@ -19,6 +21,8 @@ public class EventPublisher {
 
     public static final String EXCHANGE = "app.events.v1";
 
+    private static final Logger logger = LoggerFactory.getLogger(EventPublisher.class);
+
     private final RabbitTemplate rabbitTemplate;
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
@@ -31,7 +35,7 @@ public class EventPublisher {
 
     @Scheduled(fixedDelay = 1000)
     @Transactional
-    public void relay() throws Exception {
+    public void relay() {
         var batch = outboxRepository.lockBatch(100);
         var kwitki = new ArrayList<CorrelationData>();
 
@@ -57,7 +61,7 @@ public class EventPublisher {
                 var result = kwitek.getFuture().get(5, TimeUnit.SECONDS);
                 System.out.println(kwitek.getId() + " ack=" + result.ack());
             } catch (Exception e) {
-                throw new Exception(e);
+                logger.error("Confirm failed for outbox {}", kwitek.getId(), e);
             }
         }
     }
