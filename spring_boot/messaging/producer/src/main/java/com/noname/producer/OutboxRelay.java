@@ -25,9 +25,11 @@ public class OutboxRelay {
         var kwitki = outboxPublisher.publishBatch(100);
         var ok = new ArrayList<UUID>();
 
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         for (var kwitek : kwitki) {
             try {
-                var result = kwitek.getFuture().get(5, TimeUnit.SECONDS);
+                long left = deadline - System.nanoTime();
+                var result = kwitek.getFuture().get(Math.max(0, left), TimeUnit.NANOSECONDS);
 
                 if (result.ack() && kwitek.getReturned() == null) {
                     ok.add(UUID.fromString(kwitek.getId()));
