@@ -6,6 +6,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +28,7 @@ public class OutboxRelay {
     public void relay() {
         var kwitki = outboxPublisher.publishBatch(100);
         var ok = new ArrayList<UUID>();
+        var failed = new HashMap<UUID, String>();
 
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         for (var kwitek : kwitki) {
@@ -38,8 +41,10 @@ public class OutboxRelay {
                     logger.error("Outbox {} returned as unroutable: exchange={} routingKey={} replyCode={} replyText={}",
                             kwitek.getId(), returned.getExchange(), returned.getRoutingKey(),
                             returned.getReplyCode(), returned.getReplyText());
+                    failed.put(UUID.fromString(kwitek.getId()), returned.getReplyText());
                 } else if (!result.ack()) {
                     logger.warn("Outbox {} nacked by broker, reason={}", kwitek.getId(), result.reason());
+                    failed.put(UUID.fromString(kwitek.getId()), Objects.toString(result.reason(), "No reason given"));
                 } else {
                     ok.add(UUID.fromString(kwitek.getId()));
                 }
@@ -54,8 +59,8 @@ public class OutboxRelay {
             }
         }
 
-        if (!ok.isEmpty()) {
-            outboxPublisher.settle(ok);
+        if (!ok.isEmpty() || !failed.isEmpty()) {
+            outboxPublisher.settle(ok, failed);
         }
     }
 }

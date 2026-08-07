@@ -10,9 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class OutboxPublisher {
@@ -57,7 +55,11 @@ public class OutboxPublisher {
     }
 
     @Transactional
-    public void settle(List<UUID> ok) {
+    public void settle(List<UUID> ok, Map<UUID, String> failed) {
         outboxRepository.deleteAllByIdInBatch(ok);
+
+        for (var row : outboxRepository.findAllById(failed.keySet())) {
+            row.setLastError(failed.get(row.getId()));
+        }
     }
 }
