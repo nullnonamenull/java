@@ -31,7 +31,14 @@ public class OutboxRelay {
                 long left = deadline - System.nanoTime();
                 var result = kwitek.getFuture().get(Math.max(0, left), TimeUnit.NANOSECONDS);
 
-                if (result.ack() && kwitek.getReturned() == null) {
+                if (kwitek.getReturned() != null) {
+                    var returned = kwitek.getReturned();
+                    logger.error("Outbox {} returned as unroutable: exchange={} routingKey={} replyCode={} replyText={}",
+                            kwitek.getId(), returned.getExchange(), returned.getRoutingKey(),
+                            returned.getReplyCode(), returned.getReplyText());
+                } else if (!result.ack()) {
+                    logger.warn("Outbox {} nacked by broker, reason={}", kwitek.getId(), result.reason());
+                } else {
                     ok.add(UUID.fromString(kwitek.getId()));
                 }
             } catch (Exception e) {
