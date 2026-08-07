@@ -26,7 +26,8 @@ public class OutboxRelay {
 
     @Scheduled(fixedDelay = 1000)
     public void relay() {
-        var kwitki = outboxPublisher.publishBatch(100);
+        var rows = outboxPublisher.leaseBatch(100);
+        var kwitki = outboxPublisher.publish(rows);
         var ok = new ArrayList<UUID>();
         var failed = new HashMap<UUID, String>();
 
