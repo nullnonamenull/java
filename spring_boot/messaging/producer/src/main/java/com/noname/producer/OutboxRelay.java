@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Component
 public class OutboxRelay {
@@ -41,8 +43,14 @@ public class OutboxRelay {
                 } else {
                     ok.add(UUID.fromString(kwitek.getId()));
                 }
-            } catch (Exception e) {
-                logger.error("Confirm failed for outbox {}", kwitek.getId(), e);
+            } catch (TimeoutException e) {
+                logger.warn("Outbox {} not confirmed within the batch budget, left to the lease", kwitek.getId(), e);
+            } catch (ExecutionException e) {
+                logger.error("Outbox {} confirm future failed unexpectedly", kwitek.getId(), e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("Relay interrupted while waiting for confirms, stopped after outbox {}", kwitek.getId(), e);
+                break;
             }
         }
 
