@@ -68,6 +68,15 @@ public class OutboxPublisher {
         var rows = new ArrayList<OutboxRow>();
 
         for (var row : batch) {
+            if (row.getAttempts() > 5) {
+                row.setStatus("FAILED");
+                if (row.getLastError() == null) {
+                    row.setLastError("Giving up after " + row.getAttempts() + " attempts");
+                }
+                log.error("Outbox {} parked as FAILED after {} attempts, lastError={}", row.getId(), row.getAttempts(), row.getLastError());
+                continue;
+            }
+
             var actualAttempts = row.getAttempts() + 1;
 
             row.setAttempts(actualAttempts);
