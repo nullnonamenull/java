@@ -30,6 +30,7 @@ public class OutboxRelay {
         var kwitki = outboxPublisher.publish(rows);
         var ok = new ArrayList<UUID>();
         var failed = new HashMap<UUID, String>();
+        var poisoned = new ArrayList<UUID>();
 
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         for (var kwitek : kwitki) {
@@ -43,6 +44,7 @@ public class OutboxRelay {
                             kwitek.getId(), returned.getExchange(), returned.getRoutingKey(),
                             returned.getReplyCode(), returned.getReplyText());
                     failed.put(UUID.fromString(kwitek.getId()), returned.getReplyText());
+                    poisoned.add(UUID.fromString(kwitek.getId()));
                 } else if (!result.ack()) {
                     logger.warn("Outbox {} nacked by broker, reason={}", kwitek.getId(), result.reason());
                     failed.put(UUID.fromString(kwitek.getId()), Objects.toString(result.reason(), "No reason given"));
@@ -60,8 +62,8 @@ public class OutboxRelay {
             }
         }
 
-        if (!ok.isEmpty() || !failed.isEmpty()) {
-            outboxPublisher.settle(ok, failed);
+        if (!ok.isEmpty() || !failed.isEmpty() || !poisoned.isEmpty()) {
+            outboxPublisher.settle(ok, failed, poisoned);
         }
     }
 }

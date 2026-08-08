@@ -94,11 +94,15 @@ public class OutboxPublisher {
     }
 
     @Transactional
-    public void settle(List<UUID> ok, Map<UUID, String> failed) {
+    public void settle(List<UUID> ok, Map<UUID, String> failed, List<UUID> poisoned) {
         outboxRepository.deleteAllByIdInBatch(ok);
 
         for (var row : outboxRepository.findAllById(failed.keySet())) {
             row.setLastError(failed.get(row.getId()));
+
+            if (poisoned.contains(row.getId())) {
+                row.setStatus("FAILED");
+            }
         }
     }
 }
