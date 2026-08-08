@@ -43,7 +43,7 @@ public class OutboxRelay {
                     logger.error("Outbox {} returned as unroutable: exchange={} routingKey={} replyCode={} replyText={}",
                             kwitek.getId(), returned.getExchange(), returned.getRoutingKey(),
                             returned.getReplyCode(), returned.getReplyText());
-                    failed.put(UUID.fromString(kwitek.getId()), returned.getReplyText());
+                    failed.put(UUID.fromString(kwitek.getId()), returned.getReplyText()); //TODO: is it neesed? ;P
                     poisoned.add(UUID.fromString(kwitek.getId()));
                 } else if (!result.ack()) {
                     logger.warn("Outbox {} nacked by broker, reason={}", kwitek.getId(), result.reason());
