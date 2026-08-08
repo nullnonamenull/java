@@ -68,15 +68,6 @@ public class OutboxPublisher {
         var rows = new ArrayList<OutboxRow>();
 
         for (var row : batch) {
-            if (row.getAttempts() > 5) {
-                row.setStatus("FAILED");
-                if (row.getLastError() == null) {
-                    row.setLastError("Giving up after " + row.getAttempts() + " attempts");
-                }
-                log.error("Outbox {} parked as FAILED after {} attempts, lastError={}", row.getId(), row.getAttempts(), row.getLastError());
-                continue;
-            }
-
             var actualAttempts = row.getAttempts() + 1;
 
             row.setAttempts(actualAttempts);
@@ -102,6 +93,13 @@ public class OutboxPublisher {
 
             if (poisoned.contains(row.getId())) {
                 row.setStatus("FAILED");
+            } else {
+                row.setFailures(row.getFailures() + 1);
+
+                if (row.getFailures() >= 10) {
+                    row.setStatus("FAILED");
+                    log.error("Outbox {} parked as FAILED after {} failures, lastError={}", row.getId(), row.getFailures(), row.getLastError());
+                }
             }
         }
     }

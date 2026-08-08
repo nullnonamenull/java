@@ -51,6 +51,9 @@ public class OutboxMessage {
     @Column(name = "next_attempt_at", nullable = false)
     private OffsetDateTime nextAttemptAt;
 
+    @Column(name = "failures", nullable = false)
+    private Integer failures = 0;
+
     public UUID getId() {
         return id;
     }
@@ -137,6 +140,14 @@ public class OutboxMessage {
 
     public void setNextAttemptAt(OffsetDateTime nextAttemptAt) {
         this.nextAttemptAt = nextAttemptAt;
+    }
+
+    public Integer getFailures() {
+        return failures;
+    }
+
+    public void setFailures(Integer failures) {
+        this.failures = failures;
     }
 
 }
