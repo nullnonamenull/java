@@ -68,13 +68,20 @@ public class OutboxPublisher {
         var rows = new ArrayList<OutboxRow>();
 
         for (var row : batch) {
-            row.setAttempts(row.getAttempts() + 1);
-            row.setNextAttemptAt(OffsetDateTime.now().plusSeconds(30));
+            var actualAttempts = row.getAttempts() + 1;
+
+            row.setAttempts(actualAttempts);
+            row.setNextAttemptAt(OffsetDateTime.now().plusSeconds(backoffAttempts(actualAttempts)));
 
             rows.add(new OutboxRow(row.getId(), row.getEventType(), row.getPayload()));
         }
 
         return rows;
+    }
+
+    private long backoffAttempts(int actualAttempts) {
+        int exponent = Math.min(actualAttempts - 1, 20);
+        return Math.min(30L << exponent, 300L);
     }
 
     @Transactional
