@@ -10,8 +10,8 @@ import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,13 +24,11 @@ public class OutboxPublisher {
     public static final String EXCHANGE = "app.events.v1";
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisher.class);
 
-    private final ObjectMapper objectMapper;
     private final OutboxRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
 
 
-    public OutboxPublisher(ObjectMapper objectMapper, OutboxRepository outboxRepository, RabbitTemplate rabbitTemplate) {
-        this.objectMapper = objectMapper;
+    public OutboxPublisher(OutboxRepository outboxRepository, RabbitTemplate rabbitTemplate) {
         this.outboxRepository = outboxRepository;
         this.rabbitTemplate = rabbitTemplate;
     }
@@ -41,7 +39,6 @@ public class OutboxPublisher {
 
         for (var row : rows) {
             try {
-                byte[] body = objectMapper.writeValueAsBytes(row.payload());
                 var props = MessagePropertiesBuilder.newInstance()
                         .setMessageId(row.id().toString())
                         .setContentType("application/json")
@@ -50,7 +47,7 @@ public class OutboxPublisher {
 
                 var kwitek = new CorrelationData(row.id().toString());
 
-                rabbitTemplate.send(EXCHANGE, row.eventType(), new Message(body, props), kwitek);
+                rabbitTemplate.send(EXCHANGE, row.eventType(), new Message(row.body(), props), kwitek);
                 kwitki.add(kwitek);
             } catch (AmqpException e) {
                 log.warn("Broker unreachable, sent {} of {} rows, rest left to the lease", kwitki.size(), rows.size(), e);
@@ -73,7 +70,7 @@ public class OutboxPublisher {
             row.setAttempts(actualAttempts);
             row.setNextAttemptAt(OffsetDateTime.now().plusSeconds(backoffAttempts(actualAttempts)));
 
-            rows.add(new OutboxRow(row.getId(), row.getEventType(), row.getPayload()));
+            rows.add(new OutboxRow(row.getId(), row.getEventType(), row.getPayload().getBytes(StandardCharsets.UTF_8)));
         }
 
         return rows;

@@ -30,7 +30,7 @@ public class OutboxMessage {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "payload", nullable = false)
-    private Map<String, Object> payload;
+    private String payload;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "headers", nullable = false)
@@ -86,11 +86,11 @@ public class OutboxMessage {
         this.eventType = eventType;
     }
 
-    public Map<String, Object> getPayload() {
+    public String getPayload() {
         return payload;
     }
 
-    public void setPayload(Map<String, Object> payload) {
+    public void setPayload(String payload) {
         this.payload = payload;
     }
 
