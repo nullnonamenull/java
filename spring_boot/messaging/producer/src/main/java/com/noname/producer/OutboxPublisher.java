@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 public class OutboxPublisher {
@@ -78,7 +79,8 @@ public class OutboxPublisher {
 
     private long backoffAttempts(int actualAttempts) {
         int exponent = Math.min(actualAttempts - 1, 20);
-        return Math.min(30L << exponent, 300L);
+        long delay = Math.min(30L << exponent, 300L);
+        return delay + ThreadLocalRandom.current().nextLong(delay / 5);
     }
 
     @Transactional
