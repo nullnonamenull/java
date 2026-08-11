@@ -36,7 +36,7 @@ public class OutboxPublisher {
 
 
     public List<CorrelationData> publish(List<OutboxRow> rows) {
-        var kwitki = new ArrayList<CorrelationData>();
+        var pendingConfirms = new ArrayList<CorrelationData>();
 
         for (var row : rows) {
             try {
@@ -46,18 +46,18 @@ public class OutboxPublisher {
                         .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
                         .build();
 
-                var kwitek = new CorrelationData(row.id().toString());
+                var pendingConfirm = new CorrelationData(row.id().toString());
 
-                rabbitTemplate.send(EXCHANGE, row.eventType(), new Message(row.body(), props), kwitek);
-                kwitki.add(kwitek);
+                rabbitTemplate.send(EXCHANGE, row.eventType(), new Message(row.body(), props), pendingConfirm);
+                pendingConfirms.add(pendingConfirm);
             } catch (AmqpException e) {
-                log.warn("Broker unreachable, sent {} of {} rows, rest left to the lease", kwitki.size(), rows.size(), e);
+                log.warn("Broker unreachable, sent {} of {} rows, rest left to the lease", pendingConfirms.size(), rows.size(), e);
                 break;
             }
 
         }
 
-        return kwitki;
+        return pendingConfirms;
     }
 
     @Transactional

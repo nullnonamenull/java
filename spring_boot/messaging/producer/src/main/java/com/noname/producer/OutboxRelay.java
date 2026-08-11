@@ -27,37 +27,37 @@ public class OutboxRelay {
     @Scheduled(fixedDelay = 1000)
     public void relay() {
         var rows = outboxPublisher.leaseBatch(100);
-        var kwitki = outboxPublisher.publish(rows);
+        var pendingConfirms = outboxPublisher.publish(rows);
         var ok = new ArrayList<UUID>();
         var failed = new HashMap<UUID, String>();
         var poisoned = new ArrayList<UUID>();
 
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        for (var kwitek : kwitki) {
+        for (var pendingConfirm : pendingConfirms) {
             try {
                 long left = deadline - System.nanoTime();
-                var result = kwitek.getFuture().get(Math.max(0, left), TimeUnit.NANOSECONDS);
+                var result = pendingConfirm.getFuture().get(Math.max(0, left), TimeUnit.NANOSECONDS);
 
-                if (kwitek.getReturned() != null) {
-                    var returned = kwitek.getReturned();
+                if (pendingConfirm.getReturned() != null) {
+                    var returned = pendingConfirm.getReturned();
                     logger.error("Outbox {} returned as unroutable: exchange={} routingKey={} replyCode={} replyText={}",
-                            kwitek.getId(), returned.getExchange(), returned.getRoutingKey(),
+                            pendingConfirm.getId(), returned.getExchange(), returned.getRoutingKey(),
                             returned.getReplyCode(), returned.getReplyText());
-                    failed.put(UUID.fromString(kwitek.getId()), returned.getReplyText()); //TODO: is it neesed? ;P
-                    poisoned.add(UUID.fromString(kwitek.getId()));
+                    failed.put(UUID.fromString(pendingConfirm.getId()), returned.getReplyText());
+                    poisoned.add(UUID.fromString(pendingConfirm.getId()));
                 } else if (!result.ack()) {
-                    logger.warn("Outbox {} nacked by broker, reason={}", kwitek.getId(), result.reason());
-                    failed.put(UUID.fromString(kwitek.getId()), Objects.toString(result.reason(), "No reason given"));
+                    logger.warn("Outbox {} nacked by broker, reason={}", pendingConfirm.getId(), result.reason());
+                    failed.put(UUID.fromString(pendingConfirm.getId()), Objects.toString(result.reason(), "No reason given"));
                 } else {
-                    ok.add(UUID.fromString(kwitek.getId()));
+                    ok.add(UUID.fromString(pendingConfirm.getId()));
                 }
             } catch (TimeoutException e) {
-                logger.warn("Outbox {} not confirmed within the batch budget, left to the lease", kwitek.getId(), e);
+                logger.warn("Outbox {} not confirmed within the batch budget, left to the lease", pendingConfirm.getId(), e);
             } catch (ExecutionException e) {
-                logger.error("Outbox {} confirm future failed unexpectedly", kwitek.getId(), e);
+                logger.error("Outbox {} confirm future failed unexpectedly", pendingConfirm.getId(), e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                logger.warn("Relay interrupted while waiting for confirms, stopped after outbox {}", kwitek.getId(), e);
+                logger.warn("Relay interrupted while waiting for confirms, stopped after outbox {}", pendingConfirm.getId(), e);
                 break;
             }
         }
