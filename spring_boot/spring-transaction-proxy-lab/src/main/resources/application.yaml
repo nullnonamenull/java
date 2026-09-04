@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: spring-transaction-proxy-lab
+  jpa:
+    database: postgresql
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/some_db
+    username: admin
+    password: admin
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
