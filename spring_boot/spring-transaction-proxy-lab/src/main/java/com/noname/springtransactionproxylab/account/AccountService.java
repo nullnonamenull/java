@@ -12,12 +12,11 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
 
-    public void create(String name) {
+    public void create(final String name) {
         var account = new Account();
         account.setId(UUID.randomUUID());
-        account.setAmount(BigDecimal.ZERO);
+        account.setAmount(BigDecimal.valueOf(10000));
         account.setName(name);
         accountRepository.save(account);
     }
-
 }
