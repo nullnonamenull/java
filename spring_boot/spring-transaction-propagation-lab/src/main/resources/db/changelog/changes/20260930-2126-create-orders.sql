@@ -2,6 +2,8 @@
 
 --changeset noname:20260930-2126-create-orders
 create table orders (
-    id uuid primary key default gen_random_uuid()
+    id uuid primary key default gen_random_uuid(),
+    name varchar(255),
+    status varchar(255)
 )
 --rollback drop table accounts;
