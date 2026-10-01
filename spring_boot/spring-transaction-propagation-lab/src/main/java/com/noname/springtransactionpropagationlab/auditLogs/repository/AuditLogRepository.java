@@ -1,0 +1,9 @@
+package com.noname.springtransactionpropagationlab.auditLogs.repository;
+
+import com.noname.springtransactionpropagationlab.auditLogs.domain.AuditLog;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.UUID;
+
+public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
+}
