@@ -17,7 +17,7 @@ public class OrdersController {
 
     @PostMapping
     public void processOrder(@RequestBody OrderDTO orderDTO) {
-        orderService.processOrderWithRequired(orderDTO);
+        orderService.processOrder(orderDTO);
     }
 
 }

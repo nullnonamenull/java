@@ -4,9 +4,10 @@ import com.noname.springtransactionpropagationlab.auditLogs.service.AuditLogServ
 import com.noname.springtransactionpropagationlab.orders.domain.Order;
 import com.noname.springtransactionpropagationlab.orders.dto.OrderDTO;
 import com.noname.springtransactionpropagationlab.orders.repository.OrderRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -17,8 +18,9 @@ public class OrderService {
     private final AuditLogService auditLogService;
     private final OrderRepository orderRepository;
 
-    @Transactional // REQUIRED - default
-    public void processOrderWithRequired(final OrderDTO orderDTO) {
+    //    @Transactional // REQUIRED - default
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void processOrder(final OrderDTO orderDTO) {
         var order = new Order();
         order.setId(UUID.randomUUID());
         order.setName(orderDTO.name());
@@ -27,9 +29,13 @@ public class OrderService {
         orderRepository.save(order);
 
         try {
-            auditLogService.saveAuditWithRequired(order.getId(), order.getName(), order.getStatus());
+            auditLogService.saveAudit(order.getId(), order.getName(), order.getStatus());
         } catch (RuntimeException e) {
             // ignored intentionally
+        }
+
+        if (true) {
+            throw new RuntimeException();
         }
     }
 
