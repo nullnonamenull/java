@@ -4,6 +4,7 @@ import com.noname.springtransactionpropagationlab.auditLogs.service.AuditLogServ
 import com.noname.springtransactionpropagationlab.orders.domain.Order;
 import com.noname.springtransactionpropagationlab.orders.dto.OrderDTO;
 import com.noname.springtransactionpropagationlab.orders.repository.OrderRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,8 @@ public class OrderService {
     private final AuditLogService auditLogService;
     private final OrderRepository orderRepository;
 
-    public void processOrder(final OrderDTO orderDTO) {
+    @Transactional // REQUIRED - default
+    public void processOrderWithRequired(final OrderDTO orderDTO) {
         var order = new Order();
         order.setId(UUID.randomUUID());
         order.setName(orderDTO.name());
