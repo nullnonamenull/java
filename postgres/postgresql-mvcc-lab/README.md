@@ -58,3 +58,190 @@ id      = 1
 owner   = Pioter
 balance = 1000.00
 ```
+
+---
+
+# Environment Setup
+
+Start PostgreSQL:
+
+```bash
+docker compose up -d
+```
+
+Verify teh container:
+
+```bash
+docker compose ps
+```
+
+---
+
+# Opening Two PostgreSQL Sessions
+
+The experiment require two independent database sessions.
+
+## Temrinal A
+
+```bash
+docker compose exec postgres psql -U admin -d mvcc_lab
+```
+
+The terminal represent two independent PostgreSQL connections:
+
+```text
+Terminal A                  Terminal B
+────────────────────────────────────────
+Session A                   Session B
+Transaction A               Transaction B
+```
+
+---
+
+# Useful Commands
+
+Check current data:
+
+```sql
+select * from accounts;
+```
+
+Start a transaction:
+
+```sql
+begin;
+```
+
+Commit:
+
+```sql
+commit;
+```
+
+Rollback:
+
+```sql
+rollback;
+```
+
+Check the transaction isolation level:
+
+```sql
+show transaction_isolation;
+```
+
+Reset the account between experiments:
+
+```sql
+update accounts
+    set balance = 1000
+    where id = 1;
+```
+
+Verify:
+
+```sql
+select * from accounts;
+```
+
+---
+
+# Experiment 1 - Uncommitted Changes
+
+## Goal
+
+Determine whether one PostgreSQL session can observe changes made by another before those changes are commited.
+
+---
+
+## Step 1 - Transaction A
+
+### Temrinal A
+
+Start a transaction:
+
+```sql
+begin;
+```
+
+Modify the account:
+
+```sql
+update accounts
+    set balance = 500
+    where id = 1;
+```
+
+Read the modified value:
+
+```sql
+select * from accounts where id = 1;
+```
+
+Do **not** commit the transaction yet.
+
+---
+
+## Step 2 - Hypothesis
+
+Before querying the same row from Terminal B, predict which balance will be visible.
+
+```text
+Expected balance: 1000
+
+Reason: Transaction A has not been commited yet, so its chnages are not visible to other sessions. Session B still sees the previous value.
+```
+
+---
+
+## Step 3 - Session B
+
+### Terminal B
+
+```sql
+select * from acocunts where id = 1;
+```
+
+### Observed Result
+
+```text
+Terminal A balance: 500
+
+Terminal B balance: 1000
+```
+
+### Explanation
+
+```text
+Transaction A has not been commited yet, so its changes are not visible to other sessions.
+```
+
+## Step 4 - COmmit Transaction A
+
+### Terminal A - Commit Transaction A
+
+### Terminal A
+
+```sql
+commit;
+```
+
+### Terminal B
+
+Execute the query again:
+
+```sql
+select * from accounts where id = 1;
+```
+
+### Observed Result
+
+```text
+Balance after transaction A commits: 500
+```
+
+### Conslusion
+
+```text
+Changes become visible to other transactions only after they are commited.
+```
