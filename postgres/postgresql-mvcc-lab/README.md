@@ -379,3 +379,170 @@ commit;
 ```
 
 ---
+
+# Experiment 3 - REPEATABLE READ
+
+## Goal
+
+Repeat the previous experiment using `REPEATABLE READ` and compare its behavior with `READ COMMITED`.
+
+---
+
+## Reset 
+
+```sql
+update accounts
+    set balance = 1000
+    where id = 1;
+```
+
+Verify:
+
+```sql
+select * from accounts where id = 1;
+```
+
+---
+
+## Step 1 - Transaction A
+
+### Terminal A
+
+Start a transaction using `REPEATABLE READ`
+
+```sql
+begin transaction isolation level repeatable read;
+```
+
+Verify the isolation level:
+
+```sql
+show transaction_isolation;
+```
+
+Perform the first read:
+
+```sql
+select balance
+from accounts
+where id = 1;
+```
+
+Record the result:
+
+```text
+First select: 1000
+```
+
+Keep the transaction open.
+
+---
+
+## Step 2 - Transaction B
+
+### Terminal B
+
+```sql
+begin;
+```
+
+Modify the account:
+
+```sql
+update accounts
+    set balance = 2000
+    where id = 1;
+```
+
+Commit:
+
+```sql
+commit;
+```
+
+---
+
+## Step 3 - Hypothesis
+
+Before executing the second query in Transaction A:
+
+```text
+Isolation level: REPEATABLE READ
+
+First SELECT: 1000
+
+Transaction B commited balance = 2000
+
+Expected second SELECT: 1000
+
+Reason: Under REPEATABLE READ the transaction takes a single snapshot at its first query reuses it for every subsequent statement. Transaction B's commit happend after that snapshot was taken, so Transaction A still sees the original value, even though the change is already commited.
+```
+
+---
+
+## Step 4 - Second Read
+
+### Terminal A
+
+```sql
+select balance
+from accounts
+where id = 1;
+```
+
+### Observed Result
+
+```text
+First SELECT: 1000
+
+Second SELECT: 1000
+```
+
+### Explanation
+
+```text
+Under REPEATABLE READ the transaction takes a single snapshot at its first query reuses it for every subsequent statement. Transaction B's commit happend after that snapshot was taken, so Transaction A still sees the original value, even though the change is already commited.
+```
+
+---
+
+## Step 5 Finish Transaction A
+
+```sql
+commit;
+```
+
+Query the value again:
+
+```sql
+select balance
+from accounts
+where id = 1;
+```
+
+### Observed Result Aftre Commit
+
+```text
+Balance: 1000
+```
+
+# READ COMMITTED vs REPEATABLE READ
+
+| Behavior | READ COMMITTED | REPEATABLE READ |
+|---|---|---|
+| Snapshot scope | Per statement – each query takes a new snapshot | Per transaction – one snapshot taken at the first query and reused until commit/rollback |
+| Visibility of newly committed data | Visible to the next statement immediately after the other transaction commits | Not visible – data committed after the snapshot stays hidden for the whole transaction |
+| Can consecutive SELECTs return different values? | Yes (1000 → 2000 in Experiment 2) | No (1000 → 1000 in Experiment 3) |
+| Behavior after another transaction commits | Transaction A sees the new value on its next read | Transaction A keeps seeing the original value; the commit has no effect on its reads |
+
+---
+
+# MVCC Mental Model
+
+## What is MVCC?
+
+```text
+MVCC (Multi-Version Concurrency Control) is how PostgreSQL lets readers and writers work on the same data at the same time without blocking each other.
+
+Instead of overwriting a row in place, an update creates a new version of the row and marks the old one as expired. Each transaction sees the version that was valid at the time its snapshot was taken, so a reader never has to wait for writer, and a writer never has to wait for reader.
+```
