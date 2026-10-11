@@ -245,3 +245,137 @@ Balance after transaction A commits: 500
 ```text
 Changes become visible to other transactions only after they are commited.
 ```
+
+---
+
+# Experiment 2 - READ COMMITED
+
+## Goal
+
+Observe what happens when another transaction modifies and commits a row between two `select` statements executed by the same transaction.
+
+---
+
+## Reset
+
+```sql
+update accounts
+    set balance = 1000
+    where id = 1;
+```
+
+Verify:
+
+```sql
+select * from accounts where id = 1;
+```
+
+---
+
+## Setp 1 - Transaction A
+
+### Terminal A
+
+```sql
+begin;
+```
+
+Check the isolation level:
+
+```sql
+show transaction_isolation;
+```
+
+Perform the first read:
+
+```sql
+select balance
+from accounts
+where id = 1;
+```
+
+Record the result:
+
+```text
+First Select: 1000
+```
+
+Keep Transaction A open.
+
+---
+
+## Step 2 - Transaction B
+
+### Terminal B
+
+```sql
+begin;
+```
+
+Modify the account:
+
+```sql
+update accounts
+    set balance = 2000
+    where id = 1;
+```
+
+Commit the change:
+
+```sql
+commit;
+```
+
+---
+
+## Step 3 - Hypothesis
+
+Transaction A remains open.
+
+Predict what the second `select` executed by Transaction A will return.
+
+```text
+First SELECT: 1000
+
+Transaction B commited balande = 2000
+
+Expected second SELECT: 2000
+
+Reason: Under READ COMMITED each statement takes a new snapshot, so the second SELECT in Transaction A sees the value comitted by Transaction B, even though Transaction A was already open.
+```
+
+---
+
+## Step 4 - Second Read
+
+### Terminal A
+
+```sql
+select balance
+from accounts
+where id = 1;
+```
+
+### Observed Result
+
+```text
+First select: 1000
+
+Second select: 2000
+```
+
+### Explanation
+
+```text
+Under READ COMMITED each statement takes a new snapshot, so the second SELECT in Transaction A sees the value comitted by Transaction B, even though Transaction A was already open.
+```
+
+---
+
+## Cleanup
+
+```sql
+commit;
+```
+
+---
